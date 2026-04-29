@@ -54,6 +54,3 @@
 ## Contribution & Safety 🛡️
 
 This application is designed specifically as an **educational tool**. The AI Engine includes strict safety filters (`POLITICAL_PATTERNS` in `aiEngine.js`) to block any requests asking for political opinions, candidate recommendations, or biased information.
-
-## License 📜
-MIT License
