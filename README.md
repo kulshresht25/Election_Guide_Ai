@@ -109,10 +109,10 @@ git clone https://github.com/your-username/election-guide.git
 cd election-guide
 npm install
 npm run dev
-
+```
 ---
 
-## 📁 Folder Structure
+# 📁 Folder Structure
 
 /src/components   → UI components (ChatView, ChecklistView, Sidebar, etc.)  
 /src/data         → Structured data (FAQ, timelines, checklists, country info)  
