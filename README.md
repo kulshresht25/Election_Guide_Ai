@@ -110,3 +110,52 @@ cd election-guide
 npm install
 npm run dev
 
+---
+
+## 📁 Folder Structure
+
+/src/components   → UI components (ChatView, ChecklistView, Sidebar, etc.)  
+/src/data         → Structured data (FAQ, timelines, checklists, country info)  
+/src/engine       → AI engine (intent matching, safety filters, responses)  
+/src/App.jsx      → Global state + localization  
+/src/index.css    → Design system + theme tokens  
+
+---
+
+## 🌟 Why This Matters
+
+Democracy works best when participation is informed and accessible.
+
+This project bridges the gap between **complex systems** and **everyday users**, making elections easier to understand—especially for:
+
+- First-time voters  
+- Multilingual populations  
+- Users with limited access to reliable information  
+
+---
+
+## 🔮 Future Scope
+
+- Integration with official election APIs (real-time data)  
+- Mobile app version  
+- Offline-first support for rural and low-connectivity areas  
+- Smart reminders for registration and voting deadlines  
+
+---
+
+## 🏁 Built for PromptWars: Virtual
+
+A demonstration of how **intent-driven development + AI** can rapidly create meaningful, real-world solutions.
+
+---
+
+## 🤝 Contribution
+
+Contributions, ideas, and improvements are welcome!  
+Feel free to fork the repo and submit a pull request.
+
+---
+
+## 📜 License
+
+This project is open-source and available under the MIT License.
