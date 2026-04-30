@@ -10,6 +10,7 @@ import VoterProfileView from './components/VoterProfileView';
 import FactCheckerView from './components/FactCheckerView';
 import SelfieBoothView from './components/SelfieBoothView';
 import MiniGameView from './components/MiniGameView';
+import ChecklistView from './components/ChecklistView';
 import DebateView from './components/DebateView';
 
 const DICTIONARY = {
@@ -178,9 +179,13 @@ export default function App() {
   });
   const [userState, setUserState] = useState(() => {
     const saved = localStorage.getItem('election-guide-user');
-    return saved
+    const parsed = saved
       ? JSON.parse(saved)
       : { country: null, language: 'en-US', isFirstTime: true };
+    if (!parsed.userId) {
+      parsed.userId = 'user_' + Math.random().toString(36).substring(2, 10);
+    }
+    return parsed;
   });
   const [showCountrySelection, setShowCountrySelection] = useState(!userState.country);
 
@@ -264,15 +269,22 @@ export default function App() {
           <button
             className="mobile-menu-btn"
             onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={sidebarOpen}
+            aria-controls="sidebar-menu"
           >
-            <Menu size={20} />
+            <Menu size={20} aria-hidden="true" />
           </button>
           <h2 className="header-title">{DICTIONARY[userState.language || 'en-US'][activePage]}</h2>
           <div className="header-actions">
             <span
               className="badge info interactive-badge"
               onClick={() => setShowCountrySelection(true)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowCountrySelection(true); }}
               title="Change Country"
+              role="button"
+              tabIndex={0}
+              aria-label="Change Country"
             >
               {
                 (() => {

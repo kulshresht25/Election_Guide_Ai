@@ -1,4 +1,5 @@
 // AI Engine: Dynamic election assistant with context-aware responses
+// Architecture: delegates safety, intent parsing, and response generation to dedicated modules.
 
 import {
   COUNTRIES,
@@ -10,8 +11,14 @@ import {
   DEFAULT_FAQ,
 } from '../data/electionData';
 
+// Import modular sub-systems
+import { isSafetyViolation, SAFETY_RESPONSE } from './safetyFilter';
+import { detectCountry, extractUserContext, parseIntent, TOPIC_PATTERNS } from './intentParser';
+
 // --- Dynamic Phrasing Utilities ---
+/** Picks a random element from an array. */
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
 
 const INTROS = {
   registration: [
@@ -82,45 +89,8 @@ function dynamicTip(tip) {
   return pick(TIPS)(tip);
 }
 
-function extractUserContext(msg) {
-  const lower = msg.toLowerCase();
-  return {
-    isQuestion: /\?|how|what|when|where|why|can i|do i|is it/.test(lower),
-    isCasual: /hey|hi|yo|sup|thanks|thx|cool|okay|pls|plz/.test(lower),
-    mentionsOnline: /online|website|internet|app|digital/.test(lower),
-    mentionsDeadline: /deadline|last date|time limit|when.*register/.test(lower),
-    mentionsAge: /age|how old|18|year/.test(lower),
-    mentionsFee: /fee|cost|free|money|pay/.test(lower),
-  };
-}
-
-// Safety filter: detect political opinion requests
-const POLITICAL_PATTERNS = [
-  /who (?:should|to|do you) (?:i |we )?vote/i,
-  /best (?:candidate|party|politician)/i,
-  /which party/i,
-  /your (?:opinion|view|thought) on/i,
-  /do you (?:support|like|prefer)/i,
-  /is .+ (?:good|bad|better|worse) (?:candidate|party|leader|pm|president)/i,
-  /should .+ (?:win|lose)/i,
-  /favorite (?:candidate|party|leader)/i,
-];
-
-function isSafetyViolation(text) {
-  return POLITICAL_PATTERNS.some((pattern) => pattern.test(text));
-}
-
-const SAFETY_RESPONSE = `🚫 <strong>I can't help with that.</strong>
-
-I'm designed to provide <strong>neutral, educational information</strong> about the election process only. I cannot:
-<ul>
-<li>Suggest who to vote for</li>
-<li>Share political opinions</li>
-<li>Compare candidates or parties</li>
-<li>Recommend any political choice</li>
-</ul>
-
-<div class="tip-box">💡 <strong>Tip:</strong> I can help you understand <em>how</em> to vote, voter registration, election timelines, and your rights as a voter. Feel free to ask about those!</div>`;
+// NOTE: extractUserContext, isSafetyViolation, SAFETY_RESPONSE, detectCountry
+// are imported from the modular sub-files above.
 
 // Topic patterns and response generators
 const TOPIC_HANDLERS = [
@@ -602,37 +572,65 @@ function generateHelp() {
 <div class="tip-box">🚫 I stay completely <strong>neutral</strong> and will never suggest who to vote for or share political opinions. I only provide educational information.</div>`;
 }
 
-// Country detection from message
-function detectCountry(text) {
-  const lower = text.toLowerCase();
-  if (/\bindia\b|\bhindi\b|\bbharat\b/i.test(lower)) return 'IN';
-  if (/\busa?\b|\bunited states\b|\bamerica\b/i.test(lower)) return 'US';
-  if (/\buk\b|\bunited kingdom\b|\bbritain\b|\bengland\b/i.test(lower)) return 'UK';
-  if (/\bcanada\b|\bcanadian\b/i.test(lower)) return 'CA';
-  if (/\baustralia\b|\baussie\b/i.test(lower)) return 'AU';
-  if (/\bgermany\b|\bgerman\b/i.test(lower)) return 'DE';
-  if (/\bfrance\b|\bfrench\b/i.test(lower)) return 'FR';
-  if (/\bbrazil\b|\bbrazilian\b/i.test(lower)) return 'BR';
-  if (/\bjapan\b|\bjapanese\b/i.test(lower)) return 'JP';
-  if (/\bsouth africa\b/i.test(lower)) return 'ZA';
-  return null;
+// ─── Input Validation Helper ──────────────────────────────────────────────────
+/**
+ * Validates and sanitizes user input.
+ * @param {any} input - User message input
+ * @returns {string} Trimmed, validated message or empty string
+ */
+function validateInput(input) {
+  if (!input || typeof input !== 'string') return '';
+  return input.trim().substring(0, 5000); // Limit to 5000 chars
 }
 
-// Main AI processing function
-export function processMessage(userMessage, userState, messageHistory = []) {
-  const { country = 'IN' } = userState;
-  const ctx = extractUserContext(userMessage);
+// Fallback responses for unrecognized or empty input
+const FALLBACKS = [
+  `<p>That's an interesting question! I specialize in election processes. Here's what I can help you with:</p>`,
+  `<p>I'd love to help! While that's outside my expertise, here are topics I know well:</p>`,
+  `<p>Hmm, I'm not sure about that one, but I'm great at explaining these election topics:</p>`,
+  `<p>Good question! Let me point you to what I can help with:</p>`,
+];
 
-  // 1. Safety check
-  if (isSafetyViolation(userMessage)) {
+// Main AI processing function
+/**
+ * Core AI message processor.
+ * Pipeline: Input validation → Safety check → Country detection → Intent matching → Response generation
+ * @param {string} userMessage - Raw user input
+ * @param {object} userState - User's country, language, voter type
+ * @param {array} messageHistory - Previous messages for context (optional)
+ * @returns {object} { text: string (HTML), detectedCountry: string|null }
+ */
+export function processMessage(userMessage, userState, messageHistory = []) {
+  // Step 0: Validate input
+  const sanitizedMessage = validateInput(userMessage);
+  if (!sanitizedMessage) {
+    return {
+      text: `${pick(FALLBACKS)}
+<ul>
+<li>📋 <strong>Voter Registration</strong> — "How do I register to vote?"</li>
+<li>📄 <strong>Required Documents</strong> — "What documents do I need?"</li>
+<li>🗳️ <strong>Voting Day Guide</strong> — "What happens on voting day?"</li>
+<li>🎉 <strong>First-Time Voter</strong> — "I'm a first-time voter"</li>
+<li>📅 <strong>Election Process</strong> — "Explain the election process"</li>
+</ul>
+${dynamicTip('Try asking one of the questions above, or check the FAQ section in the sidebar!')}`,
+      detectedCountry: null,
+    };
+  }
+
+  const { country = 'IN' } = userState;
+  const ctx = extractUserContext(sanitizedMessage);
+
+  // Step 1: Safety check — block political opinion requests
+  if (isSafetyViolation(sanitizedMessage)) {
     return { text: SAFETY_RESPONSE, detectedCountry: null };
   }
 
-  // 2. Country detection
-  const detectedCountry = detectCountry(userMessage);
+  // Step 2: Country detection — look for country names in message
+  const detectedCountry = detectCountry(sanitizedMessage);
 
-  // 3. Country-only message
-  if (detectedCountry && userMessage.trim().split(/\s+/).length <= 4) {
+  // Step 3: Country-only message — if user just mentioned a country
+  if (detectedCountry && sanitizedMessage.split(/\s+/).length <= 4) {
     const cName = getCountryName(detectedCountry);
     const greetings = [
       `Great! I'll now tailor my answers for <strong>${cName}</strong>.`,
@@ -654,16 +652,32 @@ export function processMessage(userMessage, userState, messageHistory = []) {
     };
   }
 
-  // 4. Topic matching with context
+  // 4. Topic matching — dispatch via parseIntent + handler map
   const activeCountry = detectedCountry || country;
-  for (const topic of TOPIC_HANDLERS) {
-    for (const pattern of topic.patterns) {
-      if (pattern.test(userMessage)) {
-        return {
-          text: topic.handler(activeCountry, ctx),
-          detectedCountry,
-        };
-      }
+  const intentKey = parseIntent(userMessage);
+  if (intentKey) {
+    const handlerMap = {
+      registration:     (c) => generateRegistrationResponse(c, ctx),
+      documents:        (c) => generateDocumentsResponse(c, ctx),
+      votingDay:        (c) => generateVotingDayResponse(c, ctx),
+      firstTime:        (c) => generateFirstTimeResponse(c, ctx),
+      process:          (c) => generateElectionProcessResponse(c, ctx),
+      timeline:         (c) => generateTimelineResponse(c),
+      evm:              ()  => generateEVMResponse(),
+      nota:             ()  => generateNOTAResponse(),
+      mcc:              ()  => generateMCCResponse(),
+      postal:           (c) => generatePostalVoteResponse(c),
+      electoralCollege: ()  => generateElectoralCollegeResponse(),
+      primaries:        ()  => generatePrimariesResponse(),
+      rights:           (c) => generateRightsResponse(c),
+      counting:         (c) => generateCountingResponse(c),
+      greeting:         ()  => generateGreeting(),
+      thanks:           ()  => generateThanks(),
+      help:             ()  => generateHelp(),
+    };
+    const handler = handlerMap[intentKey];
+    if (handler) {
+      return { text: handler(activeCountry), detectedCountry };
     }
   }
 
@@ -682,14 +696,8 @@ export function processMessage(userMessage, userState, messageHistory = []) {
   }
 
   // 6. Conversational fallback
-  const fallbacks = [
-    `<p>That's an interesting question! I specialize in election processes. Here's what I can help you with:</p>`,
-    `<p>I'd love to help! While that's outside my expertise, here are topics I know well:</p>`,
-    `<p>Hmm, I'm not sure about that one, but I'm great at explaining these election topics:</p>`,
-    `<p>Good question! Let me point you to what I can help with:</p>`,
-  ];
   return {
-    text: `${pick(fallbacks)}
+    text: `${pick(FALLBACKS)}
 <ul>
 <li>📋 <strong>Voter Registration</strong> — "How do I register to vote?"</li>
 <li>📄 <strong>Required Documents</strong> — "What documents do I need?"</li>

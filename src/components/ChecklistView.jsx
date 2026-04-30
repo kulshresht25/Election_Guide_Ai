@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   COUNTRIES,
   FIRST_TIME_CHECKLIST,
   DEFAULT_CHECKLIST,
 } from '../data/electionData';
 import { Check, FileText, ListChecks, Lightbulb } from 'lucide-react';
+import { saveChecklistProgress, loadChecklistProgress } from '../firestoreService';
 
 export default function ChecklistView({ userState, setUserState, dict }) {
   const country = userState.country || 'IN';
@@ -21,7 +22,27 @@ export default function ChecklistView({ userState, setUserState, dict }) {
         [country]: newState
       }
     }));
+
+    if (userState.userId) {
+      saveChecklistProgress(userState.userId, country, newState);
+    }
   };
+
+  useEffect(() => {
+    if (userState.userId && Object.keys(checkedItems).length === 0) {
+      loadChecklistProgress(userState.userId, country).then(dbState => {
+        if (dbState && Object.keys(dbState).length > 0) {
+          setUserState(prev => ({
+            ...prev,
+            checklistState: {
+              ...(prev.checklistState || {}),
+              [country]: dbState
+            }
+          }));
+        }
+      });
+    }
+  }, [userState.userId, country]);
 
   const allItems = [...checklist.documents, ...checklist.steps];
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
@@ -41,6 +62,7 @@ export default function ChecklistView({ userState, setUserState, dict }) {
           <select
             className="country-select"
             value={country}
+            aria-label="Select your country"
             onChange={(e) => {
               setUserState((prev) => ({ ...prev, country: e.target.value }));
             }}
@@ -91,14 +113,19 @@ export default function ChecklistView({ userState, setUserState, dict }) {
         <div className="checklist-section-title">
           <FileText size={16} /> Required Documents
         </div>
-        <div className="checklist-items">
+      <div className="checklist-items" role="group" aria-label="Required documents checklist">
           {checklist.documents.map((item) => (
             <div
               key={item.id}
               className={`checklist-item ${checkedItems[item.id] ? 'checked' : ''}`}
               onClick={() => toggleCheck(item.id)}
+              role="checkbox"
+              aria-checked={!!checkedItems[item.id]}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCheck(item.id); } }}
+              aria-label={`${item.label}: ${item.sublabel}`}
             >
-              <div className="check-box">
+              <div className="check-box" aria-hidden="true">
                 {checkedItems[item.id] && <Check size={14} />}
               </div>
               <span className="check-label">{item.label}</span>
@@ -113,14 +140,19 @@ export default function ChecklistView({ userState, setUserState, dict }) {
         <div className="checklist-section-title">
           <ListChecks size={16} /> Steps to Follow
         </div>
-        <div className="checklist-items">
+        <div className="checklist-items" role="group" aria-label="Steps to follow checklist">
           {checklist.steps.map((item, index) => (
             <div
               key={item.id}
               className={`checklist-item ${checkedItems[item.id] ? 'checked' : ''}`}
               onClick={() => toggleCheck(item.id)}
+              role="checkbox"
+              aria-checked={!!checkedItems[item.id]}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCheck(item.id); } }}
+              aria-label={`Step ${index + 1}: ${item.label}`}
             >
-              <div className="check-box">
+              <div className="check-box" aria-hidden="true">
                 {checkedItems[item.id] ? (
                   <Check size={14} />
                 ) : (

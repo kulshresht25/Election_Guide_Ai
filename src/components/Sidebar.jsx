@@ -27,7 +27,11 @@ const NAV_ITEMS = [
   { id: 'debate', icon: Users },
 ];
 
-export default function Sidebar({
+/**
+ * Sidebar Navigation Component
+ * Memoized to prevent re-renders when parent props haven't changed
+ */
+function SidebarContent({
   activePage,
   onPageChange,
   darkMode,
@@ -43,8 +47,13 @@ export default function Sidebar({
       <div
         className={`sidebar-overlay ${isOpen ? 'visible' : ''}`}
         onClick={onClose}
+        aria-hidden="true"
       />
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <aside 
+        id="sidebar-menu"
+        className={`sidebar ${isOpen ? 'open' : ''}`}
+        aria-label="Main Navigation"
+      >
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">
@@ -63,12 +72,13 @@ export default function Sidebar({
           <button
             key={item.id}
             className={`nav-item ${activePage === item.id ? 'active' : ''}`}
+            aria-current={activePage === item.id ? 'page' : undefined}
             onClick={() => {
               onPageChange(item.id);
               onClose();
             }}
           >
-            <item.icon size={20} />
+            <item.icon size={20} aria-hidden="true" />
             <span>{dictionary ? dictionary[item.id] : item.id}</span>
           </button>
         ))}
@@ -80,6 +90,7 @@ export default function Sidebar({
               className="language-select"
               value={language}
               onChange={(e) => onLanguageChange(e.target.value)}
+              aria-label="Select Language"
             >
               <option value="en-US">English</option>
               <option value="es-ES">Español</option>
@@ -87,12 +98,22 @@ export default function Sidebar({
               <option value="hi-IN">हिन्दी (Hindi)</option>
             </select>
           </div>
-          <div className="theme-switch-wrapper" onClick={onToggleDark}>
+          <div 
+            className="theme-switch-wrapper" 
+            onClick={onToggleDark}
+            role="button"
+            tabIndex={0}
+            aria-label={`Switch to ${darkMode ? 'light' : 'dark'} mode`}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleDark(); } }}
+          >
             <span>{darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
-            <div className={`theme-switch ${darkMode ? 'dark' : ''}`}></div>
+            <div className={`theme-switch ${darkMode ? 'dark' : ''}`} aria-hidden="true"></div>
           </div>
         </div>
       </aside>
     </>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export default React.memo(SidebarContent);
