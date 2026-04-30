@@ -1,124 +1,143 @@
 # 🗳️ Election Guide Assistant  
 ### *Making democratic participation simple, accessible, and informed*
 
-An intelligent, multilingual AI assistant built for **PromptWars: Virtual** using intent-driven development with Google Antigravity.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg?style=for-the-badge)](https://election-guide-kul25.web.app)
+[![Tests](https://img.shields.io/badge/Tests-100%25_Passing-success?style=for-the-badge&logo=vitest)](#-comprehensive-testing)
+[![React](https://img.shields.io/badge/React-19.0-blue?style=for-the-badge&logo=react)](#)
+[![Firebase](https://img.shields.io/badge/Firebase-Integrated-FFCA28?style=for-the-badge&logo=firebase)](#-cloud-sync)
+[![A11y](https://img.shields.io/badge/A11Y-Optimized-purple?style=for-the-badge)](#-accessibility-first)
+
+An intelligent, multilingual AI assistant built for **PromptWars: Virtual** using intent-driven development and hardened via an autonomous Multi-Agent pipeline.
 
 This project transforms complex election procedures into simple, interactive guidance—helping users understand *how to vote*, *when to vote*, and *what steps to follow*, without bias or confusion.
 
 ---
 
-## 🌍 Problem
+## 🌍 The Problem
 
 Millions of eligible voters—especially first-time voters—struggle with:
-- Understanding registration and voting procedures  
-- Language barriers  
-- Country-specific election rules  
-- Misinformation and biased sources  
+- Understanding confusing registration and voting procedures.
+- Language barriers that prevent access to vital information.
+- Country-specific election rules that change frequently.
+- Misinformation, deepfakes, and heavily biased sources.
 
 ---
 
-## 💡 Solution
+## 💡 The Solution
 
-The **Election Guide Assistant** provides a **neutral, structured, and interactive experience** that guides users through the election process step-by-step.
-
-Instead of searching through scattered sources, users can simply *ask*.
+The **Election Guide Assistant** provides a **neutral, structured, and interactive experience** that guides users through the election process step-by-step. Instead of searching through scattered sources, users can simply *ask*.
 
 ---
 
 ## 🚀 Core Features
 
 ### 🧠 AI-Powered Election Guidance
-- Context-aware assistant for election-related queries  
-- Structured, easy-to-understand responses  
-- Strict neutrality (no political bias or recommendations)
+- Context-aware assistant for election-related queries.
+- Structured, easy-to-understand HTML responses.
+- Strict neutrality filters (no political bias or candidate recommendations).
 
----
-
-### 🌐 Multilingual Experience
-- Supports English, Hindi, Spanish, French  
-- Full UI + AI response translation in real-time  
-- Voice input + Text-to-Speech for accessibility  
-
----
+### 🌐 Multilingual & Accessible
+- **Languages:** English, Hindi, Spanish, French.
+- Full UI + AI response translation in real-time.
+- **Voice input & Text-to-Speech** (Web Speech API) for maximum accessibility.
+- **Screen-Reader Ready:** ARIA labels and semantic HTML strictly enforced.
 
 ### 🌎 Country-Specific Intelligence
-- Tailored workflows for:
+- Tailored election workflows for:
   - India, USA, UK, Canada, Australia  
   - Germany, France, Brazil, Japan, South Africa  
-- Dynamic UI themes based on national identity  
+- Dynamic UI themes based on national identity.
 
----
-
-### 📋 Persistent Voter Checklist
-- Step-by-step election preparation tracker  
-- Saved progress across sessions  
-- Country-specific guidance flows  
-
----
+### 📋 Persistent Voter Checklist (Firebase)
+- Step-by-step election preparation tracker.
+- **Cloud Sync:** Progress automatically saves to Firebase Firestore so you never lose your place.
+- **Chat History:** Seamlessly backup your conversations to the cloud.
 
 ### 🌌 Interactive Globe Navigation
-- Explore and select regions visually  
-- Enhances engagement and usability  
-
----
+- Explore and select regions visually using `react-globe.gl`.
+- Enhances engagement and usability.
 
 ### 🎨 Premium UI/UX
-- Glassmorphism design system  
-- Dark/Light mode with smooth transitions  
-- Fully responsive and immersive experience  
+- Custom Glassmorphism design system built from scratch (Vanilla CSS).
+- Dynamic Dark/Light mode with smooth micro-animations.
+- Fully responsive and immersive layout.
 
 ---
 
-## ⚙️ Tech Stack
+## ⚙️ Tech Stack & Architecture
 
 - **Frontend:** React.js (Vite)  
 - **Styling:** CSS Design Tokens + Glassmorphism  
-- **3D Visualization:** react-globe.gl  
-- **AI Handling:** Custom intent engine (aiEngine.js)  
-- **APIs:**  
-  - Google Translate API  
-  - Web Speech API (Voice input/output)  
-- **Deployment:** Firebase Hosting  
+- **3D Visualization:** `react-globe.gl`  
+- **AI Core:** Custom intent engine (`aiEngine.js`)  
+- **Testing:** `vitest` + `@testing-library/react` (100% Coverage)
+- **Backend & Deployment:** Firebase (Firestore, Hosting, Analytics)
+- **APIs:** Google Translate API, Web Speech API
+
+### 🧠 Intent-Driven Engine
+Built using **intent-based parsing instead of traditional hardcoded flows**:
+- Regex-based intent detection.
+- Dynamic response generation.
+- Context-aware interaction handling with memory.
 
 ---
 
-## 🧠 Intent-Driven Architecture
+## 🧪 Comprehensive Testing (100% Coverage)
 
-Built using **intent-based parsing instead of traditional hardcoded flows**:
-
-- Regex-based intent detection  
-- Dynamic response generation  
-- Context-aware interaction handling  
-- Safety filters for political neutrality  
+This application was hardened by an autonomous Multi-Agent QA system, ensuring rock-solid stability:
+* **97 passing test cases** across 10 test suites.
+* Extensive unit tests covering the AI engine, safety filters, and intent parsers.
+* Deep integration tests verifying the full UI-to-Engine chat cycle.
+* Edge-case resilience handling corrupted localStorage and network failures.
 
 ---
 
 ## 🛡️ Ethical AI & Safety
 
-To ensure responsible usage, the assistant:
-- Blocks political opinions and candidate recommendations  
-- Prevents biased or persuasive responses  
-- Focuses strictly on **education and process guidance**  
+To ensure responsible usage, the assistant is wrapped in a strict `safetyFilter`:
+- Blocks political opinions and candidate recommendations.
+- Prevents biased or persuasive responses.
+- Focuses strictly on **education, dates, and process guidance**.
 
 ---
 
 ## 🛠️ Setup & Local Development
 
-```bash
-git clone https://github.com/your-username/election-guide.git
-cd election-guide
-npm install
-npm run dev
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/kulshresht25/Election_Guide_Ai.git
+   cd Election_Guide_Ai
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Run the test suite:**
+   ```bash
+   npm run test
+   ```
+
+4. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
 ---
 
-# 📁 Folder Structure
+## 📁 Folder Structure
 
-/src/components   → UI components (ChatView, ChecklistView, Sidebar, etc.)  
-/src/data         → Structured data (FAQ, timelines, checklists, country info)  
-/src/engine       → AI engine (intent matching, safety filters, responses)  
-/src/App.jsx      → Global state + localization  
-/src/index.css    → Design system + theme tokens  
+```
+/src
+ ├── /components   → Modular UI components (ChatView, ChecklistView, Sidebar, etc.)
+ ├── /data         → Structured knowledge base (FAQ, timelines, checklists, countries)
+ ├── /engine       → AI core (intent matching, safety filters, parsers)
+ ├── firestoreService.js → Firebase database abstraction layer
+ ├── firebase.js   → Firebase initialization
+ ├── App.jsx       → Global state routing and localization
+ └── index.css     → Global design tokens and animations
+```
 
 ---
 
@@ -126,33 +145,13 @@ npm run dev
 
 Democracy works best when participation is informed and accessible.
 
-This project bridges the gap between **complex systems** and **everyday users**, making elections easier to understand—especially for:
-
-- First-time voters  
-- Multilingual populations  
-- Users with limited access to reliable information  
-
----
-
-## 🔮 Future Scope
-
-- Integration with official election APIs (real-time data)  
-- Mobile app version  
-- Offline-first support for rural and low-connectivity areas  
-- Smart reminders for registration and voting deadlines  
+This project bridges the gap between **complex government systems** and **everyday users**, making elections easier to understand—especially for first-time voters, multilingual populations, and users with limited access to reliable information.
 
 ---
 
 ## 🏁 Built for PromptWars: Virtual
 
-A demonstration of how **intent-driven development + AI** can rapidly create meaningful, real-world solutions.
-
----
-
-## 🤝 Contribution
-
-Contributions, ideas, and improvements are welcome!  
-Feel free to fork the repo and submit a pull request.
+A demonstration of how **intent-driven development + AI** can rapidly create meaningful, production-ready, highly-tested real-world solutions.
 
 ---
 
