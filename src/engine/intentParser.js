@@ -8,8 +8,6 @@
 
 /**
  * Detects which country the user is referencing in their message.
- * @param {string} text
- * @returns {string|null} ISO country code or null if not detected
  */
 export function detectCountry(text) {
   const lower = text.toLowerCase();
@@ -28,11 +26,6 @@ export function detectCountry(text) {
 
 // ─── Context Extraction ───────────────────────────────────────────────────────
 
-/**
- * Extracts contextual flags from the user message to enrich responses.
- * @param {string} msg
- * @returns {{ isQuestion: boolean, isCasual: boolean, mentionsOnline: boolean, mentionsDeadline: boolean, mentionsAge: boolean, mentionsFee: boolean }}
- */
 export function extractUserContext(msg) {
   const lower = msg.toLowerCase();
   return {
@@ -47,61 +40,53 @@ export function extractUserContext(msg) {
 
 // ─── Intent Matching ──────────────────────────────────────────────────────────
 
-/**
- * The ordered list of topic patterns that map to handler keys.
- * Handlers are resolved in responseGenerator.js.
- */
 export const TOPIC_PATTERNS = [
   {
     key: 'registration',
     patterns: [
-      /how (?:do i |to |can i )?register/i,
-      /voter registration/i,
-      /register (?:to |for )?vot/i,
-      /sign up (?:to |for )?vot/i,
-      /enroll (?:to |for )?vot/i,
+      /register/i,
+      /registration/i,
+      /enroll/i,
+      /sign up/i,
     ],
   },
   {
     key: 'documents',
     patterns: [
-      /what (?:documents?|id|identification|papers?)/i,
-      /(?:need|require|bring) (?:for |to )?vot/i,
-      /voter id/i,
-      /photo id/i,
-      /identity (?:proof|card|document)/i,
+      /documents?/i,
+      /id\b/i,
+      /identification/i,
+      /papers?/i,
+      /proof/i,
     ],
   },
   {
     key: 'votingDay',
     patterns: [
-      /voting day/i,
-      /election day/i,
-      /polling day/i,
-      /what happens (?:on|during|at) (?:the )?(?:voting|election|polling)/i,
-      /how (?:do i |to |does )?vot(?:e|ing)/i,
-      /cast (?:my |a )?(?:vote|ballot)/i,
+      /voting/i,
+      /vote/i,
+      /poll/i,
+      /ballot/i,
+      /how (?:do i |to |can i |does one )?vot/i,
     ],
   },
   {
     key: 'firstTime',
     patterns: [
-      /first.?time voter/i,
+      /first.?time/i,
       /new voter/i,
-      /i(?:'m| am) (?:a )?(?:new|first)/i,
       /never voted/i,
-      /voting for (?:the )?first time/i,
-      /first (?:time )?(?:to |i am )?vot/i,
     ],
   },
   {
     key: 'process',
     patterns: [
-      /election (?:process|system|stages?|steps?|phases?)/i,
+      /process/i,
+      /system/i,
+      /stages?/i,
+      /steps?/i,
+      /phases?/i,
       /how (?:do |does )?election/i,
-      /explain (?:the )?election/i,
-      /election (?:work|happen)/i,
-      /step.?by.?step/i,
     ],
   },
   {
@@ -109,9 +94,8 @@ export const TOPIC_PATTERNS = [
     patterns: [
       /timeline/i,
       /schedule/i,
-      /when (?:is|are|does) (?:the )?election/i,
-      /election (?:date|calendar)/i,
-      /important dates/i,
+      /dates?/i,
+      /calendar/i,
     ],
   },
   {
@@ -134,15 +118,15 @@ export const TOPIC_PATTERNS = [
     patterns: [
       /model code/i,
       /code of conduct/i,
+      /mcc\b/i,
     ],
   },
   {
     key: 'postal',
     patterns: [
-      /postal (?:vote|ballot|voting)/i,
-      /absentee (?:vote|ballot|voting)/i,
-      /vote (?:by |from )?(?:mail|post|home)/i,
-      /mail.?in (?:vote|ballot)/i,
+      /postal/i,
+      /absentee/i,
+      /mail/i,
     ],
   },
   {
@@ -159,28 +143,29 @@ export const TOPIC_PATTERNS = [
   {
     key: 'rights',
     patterns: [
-      /right|rights/i,
+      /rights?/i,
       /can i/i,
-      /am i (?:allowed|eligible|able)/i,
-      /eligib/i,
+      /allowed/i,
+      /eligible/i,
+      /eligibility/i,
     ],
   },
   {
     key: 'counting',
     patterns: [
       /count/i,
-      /result/i,
-      /who (?:won|wins)/i,
-      /after (?:voting|election)/i,
+      /results?/i,
+      /winner/i,
+      /who won/i,
     ],
   },
   {
     key: 'greeting',
-    patterns: [/(?:hi|hello|hey|good (?:morning|evening|afternoon)|greetings)/i],
+    patterns: [/hi\b/i, /hello/i, /hey/i, /good (?:morning|evening|afternoon)/i, /greetings/i],
   },
   {
     key: 'thanks',
-    patterns: [/(?:thank|thanks|thx)/i],
+    patterns: [/thank/i, /thx/i],
   },
   {
     key: 'help',
@@ -193,15 +178,11 @@ export const TOPIC_PATTERNS = [
   },
 ];
 
-/**
- * Matches a user message against TOPIC_PATTERNS and returns the first matching key.
- * @param {string} message
- * @returns {string|null} intent key or null
- */
 export function parseIntent(message) {
+  const lower = message.toLowerCase();
   for (const topic of TOPIC_PATTERNS) {
     for (const pattern of topic.patterns) {
-      if (pattern.test(message)) return topic.key;
+      if (pattern.test(lower)) return topic.key;
     }
   }
   return null;

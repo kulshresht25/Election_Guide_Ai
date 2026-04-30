@@ -1,13 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { COUNTRIES, ELECTION_STAGES, DEFAULT_STAGES } from '../data/electionData';
 import { Check, Clock, Circle } from 'lucide-react';
+import { translateText } from '../engine/translator';
 
 export default function TimelineView({ userState, setUserState, dict }) {
   const country = userState.country || 'IN';
-  const stages = ELECTION_STAGES[country] || DEFAULT_STAGES;
+  const originalStages = ELECTION_STAGES[country] || DEFAULT_STAGES;
+  const [stages, setStages] = useState(originalStages);
+  const [isTranslating, setIsTranslating] = useState(false);
 
-  const completedCount = stages.filter((s) => s.status === 'completed').length;
-  const progressPercent = Math.round((completedCount / stages.length) * 100);
+  useEffect(() => {
+    const translateStages = async () => {
+      if (!userState.language || userState.language.startsWith('en')) {
+        setStages(originalStages);
+        return;
+      }
+
+      setIsTranslating(true);
+      try {
+        const translated = await Promise.all(originalStages.map(async (stage) => ({
+          ...stage,
+          title: await translateText(stage.title, userState.language),
+          period: await translateText(stage.period, userState.language),
+          description: await translateText(stage.description, userState.language),
+          details: stage.details ? await Promise.all(stage.details.map(d => translateText(d, userState.language))) : []
+        })));
+        setStages(translated);
+      } catch (error) {
+        console.error("Failed to translate stages", error);
+        setStages(originalStages);
+      } finally {
+        setIsTranslating(false);
+      }
+    };
+
+    translateStages();
+  }, [userState.language, country]);
+
+  const completedCount = originalStages.filter((s) => s.status === 'completed').length;
+  const progressPercent = Math.round((completedCount / originalStages.length) * 100);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -58,30 +89,34 @@ export default function TimelineView({ userState, setUserState, dict }) {
 
       {/* Timeline */}
       <div className="timeline">
-        {stages.map((stage, index) => (
-          <div key={index} className="timeline-item">
-            <div className={`timeline-dot ${stage.status}`}>
-              {getStatusIcon(stage.status)}
-            </div>
-            <div className="timeline-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <h3>{stage.title}</h3>
-                <span className={`badge ${stage.status === 'completed' ? 'success' : stage.status === 'active' ? 'info' : 'warning'}`}>
-                  {stage.status === 'completed' ? '✓ Completed' : stage.status === 'active' ? '● In Progress' : '○ Upcoming'}
-                </span>
+        {isTranslating ? (
+          <div className="loading-spinner">Translating...</div>
+        ) : (
+          stages.map((stage, index) => (
+            <div key={index} className="timeline-item">
+              <div className={`timeline-dot ${stage.status}`}>
+                {getStatusIcon(stage.status)}
               </div>
-              <div className="timeline-period">{stage.period}</div>
-              <p>{stage.description}</p>
-              {stage.details && (
-                <ul>
-                  {stage.details.map((detail, i) => (
-                    <li key={i}>{detail}</li>
-                  ))}
-                </ul>
-              )}
+              <div className="timeline-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h3>{stage.title}</h3>
+                  <span className={`badge ${stage.status === 'completed' ? 'success' : stage.status === 'active' ? 'info' : 'warning'}`}>
+                    {stage.status === 'completed' ? '✓ Completed' : stage.status === 'active' ? '● In Progress' : '○ Upcoming'}
+                  </span>
+                </div>
+                <div className="timeline-period">{stage.period}</div>
+                <p>{stage.description}</p>
+                {stage.details && (
+                  <ul>
+                    {stage.details.map((detail, i) => (
+                      <li key={i}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
