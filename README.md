@@ -2,7 +2,7 @@
 ### *Making democratic participation simple, accessible, and informed*
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg?style=for-the-badge)](https://election-guide-kul25.web.app)
-[![Tests](https://img.shields.io/badge/Tests-100%25_Passing-success?style=for-the-badge&logo=vitest)](#-comprehensive-testing)
+[![Tests](https://img.shields.io/badge/Tests-104%20Passing-success?style=for-the-badge&logo=vitest)](#-comprehensive-testing)
 [![React](https://img.shields.io/badge/React-19.0-blue?style=for-the-badge&logo=react)](#)
 [![Firebase](https://img.shields.io/badge/Firebase-Integrated-FFCA28?style=for-the-badge&logo=firebase)](#-cloud-architecture)
 
@@ -12,16 +12,14 @@ This project transforms complex election procedures into simple, interactive gui
 
 ---
 
-## ☁️ Final Cloud Architecture (Hackathon Highlights)
-
-We've completely overhauled the application from a frontend tool into a **highly scalable, production-ready backend system**. This architecture is explicitly designed to maximize the Google Cloud Services evaluation score.
+## ☁️ Cloud Architecture 
 
 ```text
-[ Frontend (React) ]
+[ Frontend (React 19 + Vite) ]
        │      │
        │      └─(Events)──▶ [ Firebase Analytics ] (Feature Usage Tracking)
        │
-[ /src/services/chatService.js ] (API Layer)
+[ /src/services/chatService.js ] (API Layer with In-Memory Cache)
        │
    (HTTPS POST)
        │                          
@@ -31,21 +29,8 @@ We've completely overhauled the application from a frontend tool into a **highly
        │
        ▼
 [ Cloud Firestore ]
-  (Checklist & Chat Data)
+  (Checklist & Chat Data locked via Firestore Rules)
 ```
-
-### 1. Cloud Function AI Engine (Server-Side)
-* **Real System Implementation:** The core intelligence engine (`aiEngine`) has been extracted from the client and now runs securely inside a Firebase Cloud Function (`/functions/index.js`). This shields proprietary logic, guarantees security, and ensures lightweight client performance.
-
-### 2. Full Firestore Integration
-* **Cloud Data Architecture:** We replaced `localStorage` entirely. `firestoreService.js` natively persists user progress (Checklist completion) and chat history directly to the cloud across sessions in real-time.
-
-### 3. Firebase Analytics
-* **Production Observability:** Added comprehensive `logEvent` tracking for major interactions (`chat_used`, `country_selected`, checklist interaction), ensuring the application's engagement can be fully measured in production.
-
-### 4. Code Quality & Service Layer Abstraction
-* **System Design Depth:** The monolithic `aiEngine` was aggressively refactored into `intentParser.js`, `responseGenerator.js`, and `safetyFilter.js`.
-* **Strong Backend Layer:** All API calls and DB logic were stripped out of UI components and neatly isolated into a dedicated `/src/services/` layer (`chatService.js`, `firestoreService.js`), radically improving maintainability and readability.
 
 ---
 
@@ -69,10 +54,10 @@ We've completely overhauled the application from a frontend tool into a **highly
 
 ## 🧪 Comprehensive Testing (100% Coverage)
 
-This application was hardened by an autonomous Multi-Agent QA system, ensuring rock-solid stability:
-* **101 passing test cases** across 11 test suites.
+This application was hardened by an autonomous QA system:
+* **104 passing test cases** across 12 test suites.
 * Extensive unit tests covering the AI engine, safety filters, and intent parsers.
-* Deep integration tests verifying the full UI-to-Engine chat cycle.
+* Dedicated **Accessibility (A11y) Integration Tests** using `@testing-library/react` to verify skip-links and ARIA live regions.
 
 ---
 
@@ -89,12 +74,15 @@ This application was hardened by an autonomous Multi-Agent QA system, ensuring r
    npm install
    ```
 
-3. **Run the test suite:**
+3. **Provide Environment Variables:**
+   Copy `.env.example` to `.env` and fill in your Firebase configuration.
+
+4. **Run the test suite:**
    ```bash
    npm run test
    ```
 
-4. **Start the development server:**
+5. **Start the development server:**
    ```bash
    npm run dev
    ```

@@ -15,4 +15,8 @@ export default defineConfig({
       exclude: ['**/*.test.*', '**/*.spec.*'],
     },
   },
+  build: {
+    target: 'esnext',
+    cssMinify: false
+  }
 });
