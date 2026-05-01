@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Vote, Volume2 } from 'lucide-react';
-import { processChat } from '../cloudFunctionService';
-import { saveChatMessage, loadChatHistory } from '../firestoreService';
+import { processChat } from '../services/chatService';
+import { saveChatMessage, loadChatHistory } from '../services/firestoreService';
 import { trackEvent } from '../firebase';
 import { translateText, translateHTML } from '../engine/translator';
 

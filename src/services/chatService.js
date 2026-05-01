@@ -6,7 +6,7 @@
  * ensuring the app always works — even without network or on the Spark plan.
  */
 
-import { processMessage as localProcessMessage } from './engine/aiEngine';
+import { processMessage as localProcessMessage } from '../engine/aiEngine';
 
 // ── Cloud Function URL ────────────────────────────────────────────────────────
 // Replace this with your actual deployed URL after running `firebase deploy --only functions`

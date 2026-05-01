@@ -5,7 +5,7 @@ import {
   DEFAULT_CHECKLIST,
 } from '../data/electionData';
 import { Check, FileText, ListChecks, Lightbulb } from 'lucide-react';
-import { saveChecklistProgress, loadChecklistProgress } from '../firestoreService';
+import { saveChecklistProgress, loadChecklistProgress } from '../services/firestoreService';
 import { translateText } from '../engine/translator';
 import { trackEvent } from '../firebase';
 
