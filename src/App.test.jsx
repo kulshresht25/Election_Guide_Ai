@@ -26,10 +26,13 @@ describe('App Component', () => {
     });
   });
 
-  it('renders the country selection screen initially', () => {
+  it('renders the country selection screen initially', async () => {
     // Clear localStorage to ensure initial state
     localStorage.clear();
     render(<App />);
-    expect(screen.getByText(/Select Your Region/i)).toBeInTheDocument();
+    const { waitFor } = require('@testing-library/react');
+    await waitFor(() => {
+      expect(screen.getByText(/Select Your Region/i)).toBeInTheDocument();
+    });
   });
 });

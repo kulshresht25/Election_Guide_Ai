@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Menu } from 'lucide-react';
-import Sidebar from './components/Sidebar';
-import ChatView from './components/ChatView';
-import TimelineView from './components/TimelineView';
-import FAQView from './components/FAQView';
-import CountrySelectionView from './components/CountrySelectionView';
-import DashboardView from './components/DashboardView';
-import VoterProfileView from './components/VoterProfileView';
-import FactCheckerView from './components/FactCheckerView';
-import SelfieBoothView from './components/SelfieBoothView';
-import MiniGameView from './components/MiniGameView';
-import ChecklistView from './components/ChecklistView';
-import DebateView from './components/DebateView';
+import { auth } from './firebase';
+import { signInAnonymously } from 'firebase/auth';
+
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const ChatView = lazy(() => import('./components/ChatView'));
+const TimelineView = lazy(() => import('./components/TimelineView'));
+const FAQView = lazy(() => import('./components/FAQView'));
+const CountrySelectionView = lazy(() => import('./components/CountrySelectionView'));
+const DashboardView = lazy(() => import('./components/DashboardView'));
+const VoterProfileView = lazy(() => import('./components/VoterProfileView'));
+const FactCheckerView = lazy(() => import('./components/FactCheckerView'));
+const SelfieBoothView = lazy(() => import('./components/SelfieBoothView'));
+const MiniGameView = lazy(() => import('./components/MiniGameView'));
+const ChecklistView = lazy(() => import('./components/ChecklistView'));
+const DebateView = lazy(() => import('./components/DebateView'));
+
 import { trackEvent } from './firebase';
 
 const DICTIONARY = {
@@ -216,6 +220,16 @@ export default function App() {
     });
   }, [activePage]);
 
+  // ── Security: Anonymous Auth for Firestore ──────────────────────────────
+  useEffect(() => {
+    signInAnonymously(auth).catch(console.error);
+  }, []);
+
+  // ── Accessibility: Dynamic lang attribute ───────────────────────────────
+  useEffect(() => {
+    document.documentElement.lang = (userState.language || 'en-US').substring(0, 2);
+  }, [userState.language]);
+
   const toggleDark = () => setDarkMode((d) => !d);
 
   const handleSelectCountry = (countryId) => {
@@ -258,28 +272,32 @@ export default function App() {
 
   if (showCountrySelection || !userState.country) {
     return (
-      <CountrySelectionView 
-        onSelectCountry={handleSelectCountry} 
-        onCancel={userState.country ? () => setShowCountrySelection(false) : undefined}
-      />
+      <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
+        <CountrySelectionView 
+          onSelectCountry={handleSelectCountry} 
+          onCancel={userState.country ? () => setShowCountrySelection(false) : undefined}
+        />
+      </Suspense>
     );
   }
 
   return (
     <div className="app-layout">
-      <Sidebar
-        activePage={activePage}
-        onPageChange={setActivePage}
-        darkMode={darkMode}
-        onToggleDark={toggleDark}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        language={userState.language || 'en-US'}
-        onLanguageChange={(lang) => setUserState(prev => ({...prev, language: lang}))}
-        dictionary={DICTIONARY[userState.language || 'en-US']}
-      />
+      <Suspense fallback={null}>
+        <Sidebar
+          activePage={activePage}
+          onPageChange={setActivePage}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          language={userState.language || 'en-US'}
+          onLanguageChange={(lang) => setUserState(prev => ({...prev, language: lang}))}
+          dictionary={DICTIONARY[userState.language || 'en-US']}
+        />
+      </Suspense>
 
-      <main className="main-content">
+      <main id="main-content" className="main-content">
         <header className="top-header">
           <button
             className="mobile-menu-btn"
@@ -322,7 +340,9 @@ export default function App() {
           </div>
         </header>
 
-        {renderPage()}
+        <Suspense fallback={<div className="loading-spinner" style={{padding: '2rem'}}>Loading...</div>}>
+          {renderPage()}
+        </Suspense>
       </main>
     </div>
   );

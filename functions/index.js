@@ -10,6 +10,10 @@
 
 const { onRequest } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions');
+const { defineSecret } = require('firebase-functions/params');
+
+// Define the secret parameter
+const aiApiKey = defineSecret('AI_API_KEY');
 
 const { isSafetyViolation, SAFETY_RESPONSE } = require('./engine/safetyFilter');
 const { detectCountry, extractUserContext, parseIntent } = require('./engine/intentParser');
@@ -286,8 +290,12 @@ exports.processChat = onRequest(
     cors: true,      // Allow cross-origin requests from the Hosting domain
     region: 'us-central1',
     maxInstances: 10,
+    secrets: [aiApiKey], // Bind the secret to this function
   },
   (req, res) => {
+    // Access the secret value safely during execution
+    const apiKey = aiApiKey.value();
+    
     // Only allow POST
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method Not Allowed' });

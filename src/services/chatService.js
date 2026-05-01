@@ -19,6 +19,17 @@ const CLOUD_FUNCTION_URL =
 // ── Request timeout (ms) ─────────────────────────────────────────────────────
 const REQUEST_TIMEOUT_MS = 5000;
 
+// ── In-Memory Cache ──────────────────────────────────────────────────────────
+// Caches identical responses to avoid duplicate cloud function calls.
+const responseCache = new Map();
+
+/**
+ * Generates a stable cache key based on the input payload.
+ */
+function getCacheKey(message, userState) {
+  return `${message.trim().toLowerCase()}_${userState.country}_${userState.language}`;
+}
+
 /**
  * Calls the Cloud Function to process a chat message.
  * Falls back to the local AI engine on any error.
@@ -28,6 +39,11 @@ const REQUEST_TIMEOUT_MS = 5000;
  * @returns {Promise<{ text: string, detectedCountry: string|null, source: 'cloud'|'local' }>}
  */
 export async function processChat(userMessage, userState) {
+  const cacheKey = getCacheKey(userMessage, userState);
+  if (responseCache.has(cacheKey)) {
+    return { ...responseCache.get(cacheKey), source: 'cache' };
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -46,6 +62,10 @@ export async function processChat(userMessage, userState) {
     }
 
     const data = await response.json();
+    
+    // Cache the response to save future API calls
+    responseCache.set(cacheKey, data);
+    
     return { ...data, source: 'cloud' };
 
   } catch (err) {
