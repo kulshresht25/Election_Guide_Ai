@@ -2,18 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Vote, Volume2 } from 'lucide-react';
 import { processMessage } from '../engine/aiEngine';
 import { saveChatMessage } from '../firestoreService';
+import { translateText, translateHTML } from '../engine/translator';
 
 function formatTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 const QUICK_ACTIONS = [
-  { icon: '📋', title: 'Voter Registration', desc: 'How to register to vote', message: 'How do I register to vote?' },
-  { icon: '🗳️', title: 'Voting Day Guide', desc: 'What to expect on voting day', message: 'What happens on voting day?' },
-  { icon: '🎉', title: 'First-Time Voter', desc: 'New voter? Start here!', message: "I'm a first-time voter" },
-  { icon: '📅', title: 'Election Timeline', desc: 'See the full election process', message: 'Explain the election process step by step' },
-  { icon: '📄', title: 'Required Documents', desc: 'What IDs do you need?', message: 'What documents do I need to vote?' },
-  { icon: '🌍', title: 'Choose Country', desc: 'Get country-specific info', message: 'I am from India' },
+  { id: 'reg', icon: '📋', title: 'Voter Registration', desc: 'How to register to vote', message: 'How do I register to vote?' },
+  { id: 'voting', icon: '🗳️', title: 'Voting Day Guide', desc: 'What to expect on voting day', message: 'What happens on voting day?' },
+  { id: 'first', icon: '🎉', title: 'First-Time Voter', desc: 'New voter? Start here!', message: "I'm a first-time voter" },
+  { id: 'timeline', icon: '📅', title: 'Election Timeline', desc: 'See the full election process', message: 'Explain the election process step by step' },
+  { id: 'docs', icon: '📄', title: 'Required Documents', desc: 'What IDs do you need?', message: 'What documents do I need to vote?' },
+  { id: 'country', icon: '🌍', title: 'Choose Country', desc: 'Get country-specific info', message: 'I am from India' },
 ];
 
 export default function ChatView({ userState, setUserState, dict }) {
@@ -35,6 +36,7 @@ export default function ChatView({ userState, setUserState, dict }) {
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
   const usedVoiceRef = useRef(false);
+  const [translatedQuickActions, setTranslatedQuickActions] = useState(QUICK_ACTIONS);
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); };
   useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
@@ -46,6 +48,24 @@ export default function ChatView({ userState, setUserState, dict }) {
       // ignore storage errors
     }
   }, [messages]);
+
+  // Translate Quick Actions when language changes
+  useEffect(() => {
+    const translateActions = async () => {
+      if (!userState.language || userState.language.startsWith('en')) {
+        setTranslatedQuickActions(QUICK_ACTIONS);
+        return;
+      }
+
+      const translated = await Promise.all(QUICK_ACTIONS.map(async (action) => ({
+        ...action,
+        title: await translateText(action.title, userState.language),
+        desc: await translateText(action.desc, userState.language)
+      })));
+      setTranslatedQuickActions(translated);
+    };
+    translateActions();
+  }, [userState.language]);
 
   // Stop speech when component unmounts
   useEffect(() => {
@@ -60,7 +80,7 @@ export default function ChatView({ userState, setUserState, dict }) {
     }
   }, [input]);
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
     const messageText = text || input.trim();
     if (!messageText) return;
 
@@ -70,16 +90,28 @@ export default function ChatView({ userState, setUserState, dict }) {
     if (userState?.userId) saveChatMessage(userState.userId, userMsg);
     setIsTyping(true);
 
-    setTimeout(async () => {
-      const result = processMessage(messageText, userState, messages);
-      if (result.detectedCountry) setUserState((prev) => ({ ...prev, country: result.detectedCountry }));
+    // Translate User Input to English for the AI Engine if not already English
+    let processingMessage = messageText;
+    if (userState.language && !userState.language.startsWith('en')) {
+      processingMessage = await translateText(messageText, 'en-US');
+    }
 
-      const assistantMsg = { id: Date.now(), role: 'assistant', text: result.text, time: new Date() };
-      setMessages((prev) => [...prev, assistantMsg]);
-      setIsTyping(false);
-      if (userState?.userId) saveChatMessage(userState.userId, assistantMsg);
-      if (usedVoiceRef.current) { speakMessage(result.text); usedVoiceRef.current = false; }
-    }, 600 + Math.random() * 800);
+    // Process with AI Engine
+    const result = processMessage(processingMessage, userState, messages);
+    if (result.detectedCountry) setUserState((prev) => ({ ...prev, country: result.detectedCountry }));
+
+    // Translate Response back to user's language if needed
+    let finalResponseText = result.text;
+    if (userState.language && !userState.language.startsWith('en')) {
+      finalResponseText = await translateHTML(result.text, userState.language);
+    }
+
+    const assistantMsg = { id: Date.now(), role: 'assistant', text: finalResponseText, time: new Date() };
+
+    setMessages((prev) => [...prev, assistantMsg]);
+    setIsTyping(false);
+    if (userState?.userId) saveChatMessage(userState.userId, assistantMsg);
+    if (usedVoiceRef.current) { speakMessage(finalResponseText); usedVoiceRef.current = false; }
   };
 
   const handleKeyDown = (e) => {
@@ -97,7 +129,7 @@ export default function ChatView({ userState, setUserState, dict }) {
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = userState.language || 'en-US';
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
@@ -147,11 +179,11 @@ export default function ChatView({ userState, setUserState, dict }) {
           <h2 id="welcome-heading">{dict?.welcomeTitle || 'Election Guide Assistant'}</h2>
           <p>{dict?.welcomeDesc || 'Your interactive AI guide to understanding elections. Ask me anything!'}</p>
           <div className="quick-actions" role="group" aria-label="Quick topic shortcuts">
-            {QUICK_ACTIONS.map((action, i) => (
+            {translatedQuickActions.map((action, i) => (
               <button
-                key={i}
+                key={action.id}
                 className="quick-action-btn"
-                onClick={() => handleSend(action.message)}
+                onClick={() => handleSend(QUICK_ACTIONS[i].message)}
                 aria-label={`Ask: ${action.title} — ${action.desc}`}
               >
                 <span className="qa-icon" aria-hidden="true">{action.icon}</span>
