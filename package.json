@@ -1,7 +1,7 @@
 {
   "name": "election-guide-ai",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "lint": "eslint src/ --ext .js,.jsx"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
