@@ -61,21 +61,22 @@ export const TOPIC_PATTERNS = [
     ],
   },
   {
+    key: 'firstTime',
+    patterns: [
+      /first.?time/i,
+      /new voter/i,
+      /never voted/i,
+    ],
+  },
+  {
     key: 'votingDay',
     patterns: [
       /voting/i,
       /vote/i,
       /poll/i,
       /ballot/i,
+      /election day/i,
       /how (?:do i |to |can i |does one )?vot/i,
-    ],
-  },
-  {
-    key: 'firstTime',
-    patterns: [
-      /first.?time/i,
-      /new voter/i,
-      /never voted/i,
     ],
   },
   {
@@ -86,7 +87,7 @@ export const TOPIC_PATTERNS = [
       /stages?/i,
       /steps?/i,
       /phases?/i,
-      /how (?:do |does )?election/i,
+      /how (?:do |does )?(?:the )?election/i,
     ],
   },
   {

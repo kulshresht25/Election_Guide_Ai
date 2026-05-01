@@ -36,7 +36,7 @@ describe('translator utility', () => {
   it('should translate HTML content', async () => {
     fetch.mockResolvedValue({
       ok: true,
-      json: async () => [[['<h4>Hola</h4>', '<h4>Hello</h4>']]],
+      json: async () => [[['Hola', 'Hello']]],
     });
 
     const result = await translateHTML('<h4>Hello</h4>', 'es-ES');
