@@ -69,10 +69,18 @@ The **Election Guide Assistant** provides a **neutral, structured, and interacti
 - **Frontend:** React.js (Vite)  
 - **Styling:** CSS Design Tokens + Glassmorphism  
 - **3D Visualization:** `react-globe.gl`  
-- **AI Core:** Custom intent engine (`aiEngine.js`)  
 - **Testing:** `vitest` + `@testing-library/react` (100% Coverage)
-- **Backend & Deployment:** Firebase (Firestore, Hosting, Analytics)
+- **Backend & Deployment:** Firebase Hosting, Firebase Cloud Functions
+- **Database & Sync:** Firebase Firestore
+- **Observability & Tracking:** Firebase Analytics, Google Cloud Logging
 - **APIs:** Google Translate API, Web Speech API
+
+### ☁️ Google Cloud Architecture
+To achieve enterprise-grade scalability and observability, this app features a robust cloud integration:
+- **Cloud Functions (Server-Side AI):** The core intelligence engine (`aiEngine.js`) runs securely inside a Firebase Cloud Function, shielding proprietary logic and ensuring lightweight client performance.
+- **Firestore (Cross-Session Sync):** A NoSQL database implementation that persists user progress (e.g., Checklist completion) and chat history across sessions and devices in real-time.
+- **Firebase Analytics & Cloud Logging:** Automated tracking of user engagement (e.g., checklist toggles, quick actions) and automated error logging sent directly to Google Cloud dashboards.
+- **Resilient Fallback Design:** If the device is offline or the Cloud Function is unreachable, the client-side seamlessly falls back to local AI processing without interrupting the user experience.
 
 ### 🧠 Intent-Driven Engine
 Built using **intent-based parsing instead of traditional hardcoded flows**:
