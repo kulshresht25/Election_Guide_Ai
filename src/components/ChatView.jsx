@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Vote, Volume2 } from 'lucide-react';
-import { processMessage } from '../engine/aiEngine';
-import { saveChatMessage } from '../firestoreService';
+import { processChat } from '../cloudFunctionService';
+import { saveChatMessage, loadChatHistory } from '../firestoreService';
+import { trackEvent } from '../firebase';
 import { translateText, translateHTML } from '../engine/translator';
 
 function formatTime(date) {
@@ -67,6 +68,26 @@ export default function ChatView({ userState, setUserState, dict }) {
     translateActions();
   }, [userState.language]);
 
+  // ── Restore chat history from Firestore on mount (cross-session/device) ──
+  useEffect(() => {
+    if (!userState?.userId) return;
+    // Only restore if local storage has no messages
+    const saved = localStorage.getItem('election-guide-messages');
+    if (saved && JSON.parse(saved).length > 0) return;
+    loadChatHistory(userState.userId).then((history) => {
+      if (history && history.length > 0) {
+        const restored = history.map((m) => ({
+          id: m.id || Date.now() + Math.random(),
+          role: m.role,
+          text: m.text,
+          time: m.timestamp?.toDate ? m.timestamp.toDate() : new Date(),
+        }));
+        setMessages(restored.slice(-20));
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userState?.userId]);
+
   // Stop speech when component unmounts
   useEffect(() => {
     return () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); };
@@ -88,30 +109,42 @@ export default function ChatView({ userState, setUserState, dict }) {
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     if (userState?.userId) saveChatMessage(userState.userId, userMsg);
+
+    // ── Analytics: track every chat message sent ──────────────────────────
+    trackEvent('chat_message_sent', {
+      country: userState?.country || 'unknown',
+      language: userState?.language || 'en-US',
+      message_length: messageText.length,
+    });
+
     setIsTyping(true);
 
-    // Translate User Input to English for the AI Engine if not already English
-    let processingMessage = messageText;
-    if (userState.language && !userState.language.startsWith('en')) {
-      processingMessage = await translateText(messageText, 'en-US');
+    try {
+      // Translate User Input to English for the AI Engine if not already English
+      let processingMessage = messageText;
+      if (userState.language && !userState.language.startsWith('en')) {
+        processingMessage = await translateText(messageText, 'en-US');
+      }
+
+      // ── Cloud Function call (falls back to local if unavailable) ────────
+      const result = await processChat(processingMessage, userState);
+      if (result.detectedCountry) setUserState((prev) => ({ ...prev, country: result.detectedCountry }));
+
+      // Translate Response back to user's language if needed
+      let finalResponseText = result.text;
+      if (userState.language && !userState.language.startsWith('en')) {
+        finalResponseText = await translateHTML(result.text, userState.language);
+      }
+
+      const assistantMsg = { id: Date.now(), role: 'assistant', text: finalResponseText, time: new Date() };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+      setIsTyping(false);
+      if (userState?.userId) saveChatMessage(userState.userId, assistantMsg);
+      if (usedVoiceRef.current) { speakMessage(finalResponseText); usedVoiceRef.current = false; }
+    } catch {
+      setIsTyping(false);
     }
-
-    // Process with AI Engine
-    const result = processMessage(processingMessage, userState, messages);
-    if (result.detectedCountry) setUserState((prev) => ({ ...prev, country: result.detectedCountry }));
-
-    // Translate Response back to user's language if needed
-    let finalResponseText = result.text;
-    if (userState.language && !userState.language.startsWith('en')) {
-      finalResponseText = await translateHTML(result.text, userState.language);
-    }
-
-    const assistantMsg = { id: Date.now(), role: 'assistant', text: finalResponseText, time: new Date() };
-
-    setMessages((prev) => [...prev, assistantMsg]);
-    setIsTyping(false);
-    if (userState?.userId) saveChatMessage(userState.userId, assistantMsg);
-    if (usedVoiceRef.current) { speakMessage(finalResponseText); usedVoiceRef.current = false; }
   };
 
   const handleKeyDown = (e) => {
@@ -124,6 +157,9 @@ export default function ChatView({ userState, setUserState, dict }) {
       return;
     }
     if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+
+    // ── Analytics: track voice input usage ───────────────────────────────
+    trackEvent('voice_input_used', { country: userState?.country || 'unknown' });
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -183,7 +219,15 @@ export default function ChatView({ userState, setUserState, dict }) {
               <button
                 key={action.id}
                 className="quick-action-btn"
-                onClick={() => handleSend(QUICK_ACTIONS[i].message)}
+                onClick={() => {
+                  // ── Analytics: track quick action clicks ────────────────
+                  trackEvent('quick_action_clicked', {
+                    action_title: action.title,
+                    country: userState?.country || 'unknown',
+                  });
+                  // Call handleSend with the original untranslated message for accurate routing
+                  handleSend(QUICK_ACTIONS[i].message);
+                }}
                 aria-label={`Ask: ${action.title} — ${action.desc}`}
               >
                 <span className="qa-icon" aria-hidden="true">{action.icon}</span>

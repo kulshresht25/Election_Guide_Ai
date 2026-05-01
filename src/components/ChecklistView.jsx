@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   COUNTRIES,
   FIRST_TIME_CHECKLIST,
@@ -7,6 +7,7 @@ import {
 import { Check, FileText, ListChecks, Lightbulb } from 'lucide-react';
 import { saveChecklistProgress, loadChecklistProgress } from '../firestoreService';
 import { translateText } from '../engine/translator';
+import { trackEvent } from '../firebase';
 
 export default function ChecklistView({ userState, setUserState, dict }) {
   const country = userState.country || 'IN';
@@ -16,6 +17,9 @@ export default function ChecklistView({ userState, setUserState, dict }) {
 
   const isFirstTime = userState.isFirstTime ?? true;
   const checkedItems = userState.checklistState?.[country] || {};
+
+  // Track previous progress to detect completion
+  const prevProgressRef = useRef(0);
 
   useEffect(() => {
     const translateChecklist = async () => {
@@ -52,7 +56,9 @@ export default function ChecklistView({ userState, setUserState, dict }) {
   }, [userState.language, country]);
 
   const toggleCheck = (id) => {
-    const newState = { ...checkedItems, [id]: !checkedItems[id] };
+    const wasChecked = !!checkedItems[id];
+    const newState = { ...checkedItems, [id]: !wasChecked };
+
     setUserState(prev => ({
       ...prev,
       checklistState: {
@@ -64,6 +70,13 @@ export default function ChecklistView({ userState, setUserState, dict }) {
     if (userState.userId) {
       saveChecklistProgress(userState.userId, country, newState);
     }
+
+    // ── Analytics: track checklist item toggled ──────────────────────────
+    trackEvent('checklist_item_toggled', {
+      item_id: id,
+      checked: !wasChecked,
+      country,
+    });
   };
 
   useEffect(() => {
@@ -85,7 +98,15 @@ export default function ChecklistView({ userState, setUserState, dict }) {
   const allItems = [...checklist.documents, ...checklist.steps];
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
   const totalCount = allItems.length;
-  const progress = Math.round((checkedCount / totalCount) * 100);
+  const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+  // ── Analytics: fire checklist_completed once when hitting 100% ──────────
+  useEffect(() => {
+    if (progress === 100 && prevProgressRef.current < 100) {
+      trackEvent('checklist_completed', { country });
+    }
+    prevProgressRef.current = progress;
+  }, [progress, country]);
 
   return (
     <div className="page-content">

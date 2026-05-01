@@ -12,6 +12,7 @@ import SelfieBoothView from './components/SelfieBoothView';
 import MiniGameView from './components/MiniGameView';
 import ChecklistView from './components/ChecklistView';
 import DebateView from './components/DebateView';
+import { trackEvent } from './firebase';
 
 const DICTIONARY = {
   'en-US': {
@@ -206,11 +207,25 @@ export default function App() {
     localStorage.setItem('election-guide-user', JSON.stringify(userState));
   }, [userState]);
 
+  // ── Analytics: track every page navigation ─────────────────────────────
+  useEffect(() => {
+    trackEvent('page_view', {
+      page_name: activePage,
+      country: userState.country || 'none',
+      language: userState.language || 'en-US',
+    });
+  }, [activePage]);
+
   const toggleDark = () => setDarkMode((d) => !d);
 
   const handleSelectCountry = (countryId) => {
     setUserState(prev => ({ ...prev, country: countryId }));
     setShowCountrySelection(false);
+    // ── Analytics: track country selection ─────────────────────────────────
+    trackEvent('country_selected', {
+      country: countryId,
+      language: userState.language || 'en-US',
+    });
   };
 
   const renderPage = () => {
