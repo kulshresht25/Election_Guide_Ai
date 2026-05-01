@@ -1,0 +1,18 @@
+{
+  "name": "Election Guide AI",
+  "short_name": "ElectionGuide",
+  "description": "Your intelligent, multilingual AI assistant for election guidance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
